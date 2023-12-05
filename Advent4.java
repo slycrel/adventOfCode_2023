@@ -1,6 +1,6 @@
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Set;
 
 /*
@@ -93,7 +93,7 @@ public class Advent4
 {
 	public static void main(String[] args)
 	{
-		var cards = new ArrayList<ScratchCard>();   // part 2
+		var cards = new LinkedList<ScratchCard>();   // part 2
 		var cardsById = new HashMap<Integer, ScratchCard>();
 
 		int winnings = 0;
@@ -122,7 +122,7 @@ public class Advent4
 
 			if (wins > 0)
 			{
-				System.out.println("processing card " + card.cardId + " with wins:" + wins);
+//				System.out.println("processing card " + card.cardId + " with wins:" + wins);
 
 				// add a bunch before next but after prev, so go forward 1, then back to where we were.
 				// this adds in "reverse" order in the list, but we don't really care as long as they are only processed once each.
@@ -130,30 +130,30 @@ public class Advent4
 				{
 					var cardToAdd = cardsById.get(card.cardNum + x);
 					itr.add(cardToAdd);
-					var which = cardToAdd.cardId.replace(""+cardToAdd.cardNum, cardToAdd.cardNum + "-" + card.cardNum);
-					System.out.println("added " + cardToAdd.cardId + "(bonus: " + which + ") overall size is " + cards.size());
+//					var which = cardToAdd.cardId.replace(""+cardToAdd.cardNum, cardToAdd.cardNum + "-" + card.cardNum);
+//					System.out.println("added " + cardToAdd.cardId + "(bonus: " + which + ") overall size is " + cards.size());
 				}
 
 				// go back to before our added elements
 				for (int i = wins; i > 0; i--)
 					itr.previous();
 			}
-			else
-			{
-				System.out.println("Skipping card " + card.cardId + " with wins:" + wins);
-			}
+//			else
+//			{
+//				System.out.println("Skipping card " + card.cardId + " with wins:" + wins);
+//			}
 		}
 
 		System.out.println("total cards with extras: " + cards.size());
 
-		int x = 0;
-		for (var card : cards)
-		{
-			x++;
-			System.out.print(card.cardId + ",");
-			if (x % 15 == 0)
-				System.out.println();
-		}
+//		int x = 0;
+//		for (var card : cards)
+//		{
+//			x++;
+//			System.out.print(card.cardId + ",");
+//			if (x % 15 == 0)
+//				System.out.println();
+//		}
 	}
 
 	private static final class ScratchCard
