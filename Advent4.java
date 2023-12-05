@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -70,15 +72,30 @@ Once all of the originals and copies have been processed, you end up with 1 inst
 
 Process all of the original and copied scratchcards until no more scratchcards are won. Including the original set of scratchcards, how many total scratchcards do you end up with?
 
+Your puzzle answer was 9496801.
+
+Both parts of this puzzle are complete! They provide two gold stars: **
 */
 
-// todo: part 2
 // part 1 took ~45 mins, coulda been faster but OCD.  :)
+// Part 2 took ~2.5 hours broken up across multiple time slices throughout the day.
+//
+// Notes:
 // part 2 would be some kind of tree traversal problem, it's been ages, so...  probably recursion-based solution to the rescue here.
+// part 2 thoughts:  This feels like a single loop, but "inserting ahead of yourself" while iterating.  So maybe
+//   a linked list traversal would be better for this so we could do that instead of building and walking a tree?
+// **Note: why am I doing this?  I think I need to leverage chatGPT to help with a few of these things to save time...  :/
+// (later...) wow, I really don't like how hard using a listIterator is in java.  No wonder I don't ever use them.  Also,
+// chatGPT led me on a merry chase through some lies about how listIterators worked.  Fun times.
+
+
 public class Advent4
 {
 	public static void main(String[] args)
 	{
+		var cards = new ArrayList<ScratchCard>();   // part 2
+		var cardsById = new HashMap<Integer, ScratchCard>();
+
 		int winnings = 0;
 		var lines = input.split("\n");
 		for (var line : lines)
@@ -88,9 +105,55 @@ public class Advent4
 			winnings += win;
 			System.out.println(card.cardId + " winning: " + win);
 
+			// part 2
+			cards.add(card);
+			cardsById.put(card.cardNum, card);
+		}
+		System.out.println("winnings total: " + winnings);
+
+		// part 2
+		System.out.println("Begin part 2...  original cards size: " + cards.size());
+
+		var itr = cards.listIterator();
+		while (itr.hasNext())
+		{
+			var card = itr.next();
+			int wins = card.getWinningsCount();
+
+			if (wins > 0)
+			{
+				System.out.println("processing card " + card.cardId + " with wins:" + wins);
+
+				// add a bunch before next but after prev, so go forward 1, then back to where we were.
+				// this adds in "reverse" order in the list, but we don't really care as long as they are only processed once each.
+				for (int x = 1; x <= wins; x++)
+				{
+					var cardToAdd = cardsById.get(card.cardNum + x);
+					itr.add(cardToAdd);
+					var which = cardToAdd.cardId.replace(""+cardToAdd.cardNum, cardToAdd.cardNum + "-" + card.cardNum);
+					System.out.println("added " + cardToAdd.cardId + "(bonus: " + which + ") overall size is " + cards.size());
+				}
+
+				// go back to before our added elements
+				for (int i = wins; i > 0; i--)
+					itr.previous();
+			}
+			else
+			{
+				System.out.println("Skipping card " + card.cardId + " with wins:" + wins);
+			}
 		}
 
-		System.out.println("winnings total: " + winnings);
+		System.out.println("total cards with extras: " + cards.size());
+
+		int x = 0;
+		for (var card : cards)
+		{
+			x++;
+			System.out.print(card.cardId + ",");
+			if (x % 15 == 0)
+				System.out.println();
+		}
 	}
 
 	private static final class ScratchCard
@@ -98,11 +161,16 @@ public class Advent4
 		Set<Integer> winners = new HashSet<>();
 		Set<Integer> possibleWinners = new HashSet<>();
 		String cardId;
+		int cardNum;
+		String inputLine;   // part 2
 
 		ScratchCard(String inputLine)
 		{
+			this.inputLine = inputLine; // part 2
+
 			var cardBasics = inputLine.split(":");
 			cardId = cardBasics[0];
+			cardNum = getCardNum(cardId);
 
 			var winsAndPoss = cardBasics[1].split("\\|");
 
@@ -121,6 +189,12 @@ public class Advent4
 			}
 		}
 
+		private int getCardNum(String cardId)
+		{
+			var num = cardId.replace("Card", "").replace(" ", "");
+			return Integer.parseInt(num);
+		}
+
 		int getWinningsTotal()
 		{
 			int total = 0;
@@ -133,6 +207,18 @@ public class Advent4
 					else
 						total *= 2;
 				}
+			}
+
+			return total;
+		}
+
+		int getWinningsCount()
+		{
+			int total = 0;
+			for (var poss : possibleWinners)
+			{
+				if (winners.contains(poss))
+					total++;
 			}
 
 			return total;
