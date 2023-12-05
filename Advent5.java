@@ -102,10 +102,29 @@ What is the lowest location number that corresponds to any of the initial seed n
 
 Your puzzle answer was 226172555.
 
-The first half of this puzzle is complete! It provides one gold star: *
+--- Part Two ---
+
+Everyone will starve if you only plant such a small number of seeds. Re-reading the almanac, it looks like the seeds: line actually describes ranges of seed numbers.
+
+The values on the initial seeds: line come in pairs. Within each pair, the first value is the start of the range and the second value is the length of the range. So, in the first line of the example above:
+
+seeds: 79 14 55 13
+This line describes two ranges of seed numbers to be planted in the garden. The first range starts with seed number 79 and contains 14 values: 79, 80, ..., 91, 92. The second range starts with seed number 55 and contains 13 values: 55, 56, ..., 66, 67.
+
+Now, rather than considering four seed numbers, you need to consider a total of 27 seed numbers.
+
+In the above example, the lowest location number can be obtained from seed number 82, which corresponds to soil 84, fertilizer 84, water 84, light 77, temperature 45, humidity 46, and location 46. So, the lowest location number is 46.
+
+Consider all of the initial seed numbers listed in the ranges on the first line of the almanac. What is the lowest location number that corresponds to any of the initial seed numbers?
+
+Your puzzle answer was 47909639.
+
+Both parts of this puzzle are complete! They provide two gold stars: **
 */
 
 // Part 1 took ~90 minutes.  Could have been shorter if I hadn't started in the early am hours...!
+// Part 2 was "easier" at around 45 mins, had to reqork it to not build an array of values, but use a
+//   start + range to iterate on instead.
 public class Advent5
 {
 	static HashMap<String,almanac> lookupTables = new HashMap<>();
@@ -122,29 +141,52 @@ public class Advent5
 			lookupTables.put(table.fromName, table);
 		}
 
-		long smallestLocation = Integer.MAX_VALUE;
+		// part 2 overrides part 1...!
+		// This takes a long time.  We could probably take a shortcut and determine the
+		// range of locations.  Once that is hit we could likely discard mappings that
+		// are inherently higher and make this faster.  But...  brute force for the
+		// win today!  Clocking in at 5ish minutes on a m2!
+		long smallestLocation = -1;
 		for (var seed : seeds)
 		{
-			var seedVal = new BigInteger(seed);
-			long value = lowestTransformFrom("seed", "location", seedVal.longValue());
-			if (value != -1)
-				smallestLocation = Math.min(value, smallestLocation);
+			long startVal = seed.startVal();
+			long range = seed.incrementVal();
+			System.out.println("beginning " + range + " iterations starting at " + startVal);
+			for (long i = 0; i < range; i++)
+			{
+				var seedVal = startVal + i;
+				long value = lowestTransformFrom("seed", "location", seedVal);
+				smallestLocation = (smallestLocation == -1) ? value : Math.min(value, smallestLocation);
+			}
+			System.out.println("smallest so far is " + smallestLocation);
 		}
 
 		System.out.println("smallest location of all seeds: " + smallestLocation);
 	}
 
-	static ArrayList<String> getSeeds(String input)
+	record Seed(String startValue, String increments)
+	{
+		long startVal() { return new BigInteger(startValue).longValue(); }
+		long incrementVal() { return new BigInteger(increments).longValue(); }
+	}
+	static ArrayList<Seed> getSeeds(String input)
 	{
 		var array = new ArrayList<String>();
 
 		var arr = new ArrayList<>(List.of(input.split(" ")));
 		arr.remove(0);  // "seeds:"
 
+		// part 1
 		for (var str : arr)
-			array.add(str.replace(" ", ""));
+			array.add(str.replace(" ", ""));        // this can't be returned anymore with pt 2 changes, ohwell
+//		return array;
 
-		return array;
+		// part 2
+		var part2array = new ArrayList<Seed>();
+		for (int x = 0; x < array.size(); x += 2)
+			part2array.add(new Seed(array.get(x), array.get(x + 1)));
+
+		return part2array;
 	}
 
 	static long lowestTransformFrom(String from, String to, long fromValue)
@@ -173,7 +215,7 @@ public class Advent5
 		var whichAlmanac = lookupTables.get(from);
 		for (var entry : whichAlmanac.entries)
 		{
-			// todo: this won't account for mapping overlaps.  Do we have to worry about that?
+			// this won't account for mapping overlaps.  Do we have to worry about that?  Seems like no, according to the dataset.
 			var num = entry.transformFrom(fromValue);
 			if (num != -1)
 			{
