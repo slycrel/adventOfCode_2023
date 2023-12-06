@@ -149,11 +149,13 @@ public class Advent3
 		var priorChar = buffer[offset - 1];
 		var nextChar = buffer[offset + 1];
 
+		// part 1
 		if (Character.isDigit(priorChar))
 			retVal.add(parseFoundDigit(offset - 1, buffer));
 		if (Character.isDigit(nextChar))
 			retVal.add(parseFoundDigit(offset + 1, buffer));
 
+		// part 2
 		// line above
 		associatedCollisions(offset, buffer, lineLength, retVal, true);
 
