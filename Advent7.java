@@ -245,28 +245,50 @@ public class Advent7
 			char whichCharacter = GetCardTypes().charAt(lowestIdx);
 			switch (handTierType(hand))
 			{
-				case 7:  // 5 of a kind
+				case 7:  // 5 of a kind                         update to 5 of a kind
 					return "AAAAA";
 
-				case 6:  // 4 of a kind
-				case 5:  // full house
-					return hand.replace("J", ""+whichCharacter);    // should all result in 5 of a kind
-
-				case 4:  // 3 of a kind
+				case 6:  // 4 of a kind                         update to 5 of a kind
+					// 2JJJJ, J2JJJ, JJ2JJ, JJJ2J, JJJJ2
+					// J2222, 2J222, 22J22, 222J2, 2222J
+				case 5:  // full house                          update to 5 of a kind
+					// 22JJJ, JJJ22, J2J2J
+					// JJ222, 222JJ, 2J2J2
 				case 1:  // high card
+					// J2345, 2J345, 23J45, 234J5, 2345J        update to a pair
 				default:
-					return hand.replace("J", ""+whichCharacter);
+					break;  // return the common transform below
+
+				case 4:  // 3 of a kind                         update to 4 of a kind
+					// JJJ23, J2J3J, 2J3JJ, 2JJ3J, 2J3JJ, 23JJJ
+					// 222J3, 2J223, 2J232, 22J23, 222J3, 2223J
+					// 333J2, 3J332, 3J323, 33J32, 333J2, 3332J
+					if (counts.get('J') == 1)
+					{
+						for (var which : counts.keySet())
+						{
+							if (counts.get(which) == 3)
+								return hand.replace("J", "" + which);
+						}
+					}
 
 				case 2:  // 1 pair
+					// JJ234, J234J, J23J4, J2J34, 234JJ
+					// J2234, 2J234, 22J34, 223J4, 2234J
 					for (var which : counts.keySet())
 					{
-						if (counts.get(which) == 2)
-							return hand.replace("J", ((which != 'J') ? ""+which : "A"));
+						if (counts.get(which) == 2 && which != 'J')
+							return hand.replace("J", ""+which);
 					}
 					break;
 
 				case 3:  // 2 pair
-					for (var which : counts.keySet())
+					// 22J44, 2J244, 224J4, 2244J
+					if (counts.get('J') == 1)
+						return hand.replace("J", ""+whichCharacter);    // full house
+
+					// JJ244, 22J4J, 224JJ
+					for (var which : counts.keySet())   // 4 of a kind
 					{
 						if (counts.get(which) == 2 && which != 'J')
 							return hand.replace("J", ""+which);
