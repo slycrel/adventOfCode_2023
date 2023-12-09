@@ -155,7 +155,6 @@ public class Advent7
 		String hand;
 		long bid;
 		int handTier;
-//		int handTier2;
 
 		Hand(String input)
 		{
@@ -164,8 +163,6 @@ public class Advent7
 			bid = Integer.parseInt(split[1]);
 
 			handTier = handTierType(hand);
-//			handTier = handTierTypePart1(hand);
-//			handTier2 = handTierType(hand);
 		}
 
 		Card[] Cards()
@@ -179,25 +176,6 @@ public class Advent7
 			return list.toArray(new Card[0]);
 		}
 
-		// this still doesn't work.  :/
-//		int handTierType(String hand)
-//		{
-//			int tier = handTierTypePart1(hand);
-//			if (hand.contains("J") && tier == 3)    // upgrade 2 pair for 2 'J' cases
-//			{
-//				tier++;     // full house
-//				if (hand.replace("J","").length() < 4)
-//					tier++; // 4 of a kind
-//			}
-//			else if (!hand.equals("JJJJJ"))
-//			{
-//				tier++;
-//			}
-//
-//			return tier;
-//		}
-
-//		int handTierTypePart1(String hand)
 		int handTierType(String hand)
 		{
 			HashMap<Character, Integer> counts = getCounts(hand);
@@ -272,6 +250,8 @@ public class Advent7
 
 				case 6:  // 4 of a kind
 				case 5:  // full house
+					return hand.replace("J", ""+whichCharacter);    // should all result in 5 of a kind
+
 				case 4:  // 3 of a kind
 				case 1:  // high card
 				default:
@@ -280,8 +260,8 @@ public class Advent7
 				case 2:  // 1 pair
 					for (var which : counts.keySet())
 					{
-						if (counts.get(which) == 2 && which != 'J')
-							return hand.replace("J", ""+which);
+						if (counts.get(which) == 2)
+							return hand.replace("J", ((which != 'J') ? ""+which : "A"));
 					}
 					break;
 
@@ -322,39 +302,16 @@ public class Advent7
 		}
 	}
 
-//	static String jerTestHigh =
-//		"""
-//            23456 100
-//            J3456 200
-//            2J456 300
-//            23J56 400
-//            234J6 500
-//            2345J 600
-//            """;
-//
-//	static String jerTestPair =
-//		"""
-//            23452 100
-//            J3422 200
-//            2J452 300
-//            23J52 400
-//            234J2 500
-//            2342J 600
-//            234JJ 700
-//            JJ422 800
-//            2J4J2 900
-//            """;
-//
-//	static String jerTestTwoPair =
-//		"""
-//            23432 100
-//            22334 110
-//            22433 120
-//            J2323 200
-//            J3322 210
-//            JJ223 210
-//            22JJ3 220
-//            """;
+	static String jerTest =
+		"""
+            23456 100
+            J3456 200
+            2J456 300
+            23J56 400
+            234J6 500
+            2345J 600
+            """;
+
 
 	static String input =
 		"""
