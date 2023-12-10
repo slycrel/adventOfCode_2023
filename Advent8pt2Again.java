@@ -1,3 +1,4 @@
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -36,8 +37,6 @@ Starting at AAA, follow the left/right instructions. How many steps are required
 
 Your puzzle answer was 19631.
 
-The first half of this puzzle is complete! It provides one gold star: *
-
 --- Part Two ---
 
 The sandstorm is upon you and you aren't any closer to escaping the wasteland. You had the camel follow the instructions, but you've barely left your starting position. It's going to take significantly more steps to escape!
@@ -70,18 +69,19 @@ Step 6: You choose all of the right paths, leading you to 11Z and 22Z.
 So, in this example, you end up entirely on nodes that end in Z after 6 steps.
 
 Simultaneously start on every node that ends with A. How many steps does it take before you're only on nodes that end with Z?
+
+Your puzzle answer was 21003205388413.
+
+
  */
 
 
-public class Advent8
+public class Advent8pt2Again
 {
 	static HashMap<String, Node> network = new HashMap<>();
 
 	public static void main(String[] args)
 	{
-		String start = "AAA";
-		String end = "ZZZ";
-
 		var instructions = input.split("\n\n");
 		var directions = instructions[0];
 
@@ -91,26 +91,6 @@ public class Advent8
 			network.put(node.name, node);
 		}
 
-		// part 2!
-		doPart2(directions);
-
-		// part 1
-		// start at beginning
-		WalkResults results = new WalkResults(network.get(start), 0);
-
-		do
-		{
-			// find the end via recursion
-			results = walkNetwork(directions, results.steps, results.node.name, end, 0);
-
-		} while (!results.node.name.equals(end));
-
-		// How many steps are required to reach start from end?
-		System.out.println("Steps required to go from " + start + " to " + end + " : " + results.steps);
-	}
-
-	static void doPart2(String directions)
-	{
 		// part 2, "all together now!"
 
 		// loop
@@ -118,13 +98,12 @@ public class Advent8
 		long steps = 0;
 		int directionsIdx = 0;
 
-		System.out.printf("Start values are: %s, %s, %s, %s, %s, %s%n", starts[0].name, starts[1].name, starts[2].name, starts[3].name, starts[4].name, starts[5].name);
-
-//		Node[] next = new Node[starts.length];
+		long[] loopCount = new long[starts.length];
+		int loopCountNum = 0;
 		do
 		{
 			// get the next direction
-			String nextStep = ""+directions.charAt(directionsIdx);
+			var nextStep = directions.charAt(directionsIdx);
 			directionsIdx++;
 			if (directionsIdx == directions.length())
 				directionsIdx = 0;
@@ -135,20 +114,38 @@ public class Advent8
 			for (int x = 0; x < starts.length; x++)
 			{
 				node = starts[x];
-				if ("L".equals(nextStep))
-					starts[x] = network.get(node.left);
-				else
-					starts[x] = network.get(node.right);
+				var theNext = network.get( ('L' == nextStep) ? node.left : node.right );
+				starts[x] = theNext;
+
+				if (theNext.name.charAt(2) == 'Z' && loopCount[x] == 0)
+				{
+					loopCount[x] = steps;
+					loopCountNum++;
+					System.out.println("position " + x + " has a loop cycle value of " + steps);
+				}
 			}
-//			System.arraycopy(next, 0, starts, 0, starts.length);
 
-			if (steps % 10000000 == 0)
-				System.out.printf("on step %d, values are: %s, %s, %s, %s, %s, %s%n", steps, starts[0].name, starts[1].name, starts[2].name, starts[3].name, starts[4].name, starts[5].name);
-
+			if (loopCountNum == starts.length)
+			{
+				long lcm = findLCM(loopCount);
+				System.out.println("Part 2 Least common multiple (lowest common denominator) is: " + lcm);
+				System.exit(0);
+			}
 		} while (!allOnZ(starts));
 		// while ends are not all 'Z'
 
 		System.out.println("Part 2 steps taken: " + steps);
+	}
+
+	private static long lcm(long a, long b) {
+		return Math.abs(a * b) / BigInteger.valueOf(a).gcd(BigInteger.valueOf(b)).longValue();
+	}
+
+	private static long findLCM(long[] input) {
+		long result = input[0];
+		for (int i = 1; i < input.length; i++)
+			result = lcm(result, input[i]);
+		return result;
 	}
 
 	private static boolean allOnZ(Node[] nodes)
@@ -172,30 +169,6 @@ public class Advent8
 		return starts.toArray(new Node[0]);
 	}
 
-	private static WalkResults walkNetwork(String directions, long steps, String start, String end, int directionIdx)
-	{
-		// found?
-		var node = network.get(start);
-		if (node.name.equals(end))
-			return new WalkResults(network.get(end), steps);
-
-		// if no more directions, return this node for a new direction iteration
-		directionIdx++;
-		if (directionIdx > directions.length())
-			return new WalkResults(node, steps);
-
-		// step further
-		steps++;
-
-		// go to the next node
-		var direction = ""+directions.charAt(directionIdx-1);
-		if ("L".equals(direction))
-			return walkNetwork(directions, steps, node.left, end, directionIdx);
-
-		// "R"
-		return walkNetwork(directions, steps, node.right, end, directionIdx);
-	}
-
 	record Node(String name, String left, String right)
 	{
 		static Node ParseNode(String input)
@@ -208,8 +181,6 @@ public class Advent8
 			return new Node(parsed[0], exits[0], exits[1]);
 		}
 	}
-
-	record WalkResults(Node node, long steps) { }
 
 	// part 2 test input
 	// 6 steps
