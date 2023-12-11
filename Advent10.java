@@ -118,29 +118,85 @@ public class Advent10
 		LoadData(input);
 		ConnectStart();
 
-		var forward = new ArrayList<Pipe>();
+		var loopPipes = new ArrayList<Pipe>();
+
+		char startDirection = GetStartDirection(start);
 
 		// find the loop
 		if (start.toNorth().south)
-			AttemptMove(forward, start.toNorth(), S);
+			AttemptMove(loopPipes, start.toNorth(), startDirection);
 		else if (start.toEast().west)
-			AttemptMove(forward, start.toEast(), W);
+			AttemptMove(loopPipes, start.toEast(), startDirection);
 		else if (start.toSouth().north)
-			AttemptMove(forward, start.toSouth(), N);
+			AttemptMove(loopPipes, start.toSouth(), startDirection);
 		else if (start.toWest().east)
-			AttemptMove(forward, start.toWest(), E);
+			AttemptMove(loopPipes, start.toWest(), startDirection);
 
-		// is odd loop sizes step count really just / 2 + 1?
-		int bonus = (forward.size() % 2 == 0) ? 0 : 1;
-		System.out.println("step count to furthest is: " + (forward.size() / 2 + bonus) + " from total loop steps " + forward.size());
+		// is odd loop sizes step count really just / 2 + 1?  That seems to be true.
+		int bonus = (loopPipes.size() % 2 == 0) ? 0 : 1;
+		System.out.println("step count to furthest is: " + (loopPipes.size() / 2 + bonus) + " from total loop steps " + loopPipes.size());
 
-//		// for odd sizes, get a reverse loop
-//		var reverse = new ArrayList<>(forward);
-//		Collections.reverse(reverse);
-//
-//		// step over until we collide
-//
-//		// show step count upon collision
+		// part 2
+		/* idea: iterate through the loop, tossing each area visited (left, right) into an array.
+		     The larger of these should be on the "outside".  Loop through the smaller array and add
+		     any additional touching non-loop cells.  The size of that array is our count.
+		     note:  There are likely more algorithmic ways to do this by counting and visiting these
+		     cells or even making some sort of mask out of the loop.  That seems harder, so I'll
+		     semi-brute force it.  :)
+
+		     plan: - add the left/right nodes from the loop array.
+		           - post-process to remove any loop cells
+		           - find the smaller, and touching non-loop cells
+		           - return the count
+		 */
+
+		ArrayList<Pipe> left = new ArrayList<>(loopPipes.size() * 2);
+		ArrayList<Pipe> right = new ArrayList<>(loopPipes.size() * 2);
+		char direction = startDirection;
+		for (var pipe : loopPipes)
+		{
+			direction = ProcessPart2(pipe, left, right, loopPipes, direction);
+		}
+
+		var inside = (left.size() < right.size()) ? left : right;
+		var extras = new ArrayList<Pipe>();
+
+		// gather extra that touch only inside
+		var combo = new ArrayList<>(loopPipes);
+//		combo.addAll(inside);
+		printMazeData(combo, false);
+
+		System.out.println("enclosed tiles: " + (inside.size() + extras.size()) + " left size " + left.size() + " right size " + right.size());
+	}
+
+	private static char GetStartDirection(Pipe start)
+	{
+		if (start.toNorth().south)
+			return S;
+		else if (start.toEast().west)
+			return W;
+		else if (start.toSouth().north)
+			return N;
+		else if (start.toWest().east)
+			return E;
+
+		return 0;   // can't move, shouldn't happen?
+	}
+
+	private static char ProcessPart2(Pipe pipe, ArrayList<Pipe> left, ArrayList<Pipe> right, ArrayList<Pipe> loopPipes, char from)
+	{
+		if (start == pipe && !left.isEmpty() && !right.isEmpty())
+			return 'S';
+
+		var leftPipe = pipe.toLeft(from);
+		var rightPipe = pipe.toRight(from);
+
+		if (!loopPipes.contains(leftPipe))
+			left.add(leftPipe);
+		if (!loopPipes.contains(rightPipe))
+			right.add(rightPipe);
+
+		return pipe.WhereNext(from);  // nextDirection
 	}
 
 	static boolean AttemptMove(ArrayList<Pipe> steps, Pipe toPipe, char fromDirection)
@@ -168,6 +224,9 @@ public class Advent10
 					return false;
 				break;
 		}
+
+		if (steps.contains(toPipe))
+			throw new RuntimeException("wha?");
 
 		steps.add(toPipe);
 		char next = toPipe.WhereNext(fromDirection);
@@ -206,6 +265,22 @@ public class Advent10
 		}
 	}
 
+	static void printMazeData(ArrayList<Pipe> maskValues, boolean excludeOthers)
+	{
+		for (Pipe[] line : mazeData)
+		{
+			for (Pipe pipe : line)
+			{
+				var printChar = ' ';
+				if (excludeOthers && maskValues.contains(pipe)  ||  !excludeOthers && !maskValues.contains(pipe))
+					printChar = pipe.part;
+
+				System.out.print(printChar);
+			}
+			System.out.println();
+		}
+	}
+
 	static void ConnectStart()
 	{
 		boolean canNorth = start.toNorth().south;
@@ -228,6 +303,7 @@ public class Advent10
 	*/
 	record Pipe(char part, int across, int down, boolean north, boolean east, boolean south, boolean west)
 	{
+		public static final String validPipes = "|-LJ7F";
 		static Pipe createPipe(char input, int across, int down)
 		{
 			return switch (input)
@@ -262,6 +338,30 @@ public class Advent10
 //				case 'S', '.'
 					default -> 0;
 			};
+		}
+
+		// order: NESW
+		public Pipe toLeft(char from)
+		{
+			if (from == N)
+				return toWest();
+			else if (from == E)
+				return toNorth();
+			else if (from == S)
+				return toEast();
+			// from == W
+			return toSouth();
+		}
+		public Pipe toRight(char from)
+		{
+			if (from == N)
+				return toEast();
+			else if (from == E)
+				return toSouth();
+			else if (from == S)
+				return toWest();
+			// from == W
+			return toNorth();
 		}
 	}
 
